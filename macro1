@@ -1,0 +1,189 @@
+'Option Explicit
+' Tentar extrair dados de gráficos
+Sub extrair_graficos()
+    Dim WordApp 'As Object
+    Dim DocWord
+    Dim inputFileDialog As FileDialog
+    ' Grafico
+    Dim testeGrafico
+    Dim wrks As Worksheet
+    Dim cht
+    
+    
+    Set WordApp = CreateObject("Word.Application")
+    
+    
+    'If MsgBox("Clear List?", vbYesNo, "Clear List") = vbYes Then DoCmd.RunSQL "DELETE * FROM tblFileList"
+    'Me.sfrmFolderList.Requery
+    
+    ' Abre o arquivo
+    Set inputFileDialog = Application.FileDialog(msoFileDialogFilePicker)
+    
+    With inputFileDialog
+        .Title = "Select Folder to Start with"
+        .AllowMultiSelect = False
+        .Filters.Add "Word", "*.docx; *.DOCX; *.doc", 1
+        If .Show = False Then Exit Sub
+    End With
+    
+    ' Define o documento
+    Set DocWord = WordApp.Documents.Open(inputFileDialog.SelectedItems(1))
+    
+    ' WordApp.ReadOnly = True
+    WordApp.Visible = False
+    WordApp.ScreenUpdating = False
+    WordApp.DisplayAlerts = False
+    On Error Resume Next
+    'Set cht = Charts.Add
+    
+    Dim numero_shape As Integer
+    Dim numero_planilha As Integer
+    numero_planilha = 0
+    numero_shape = 0
+    
+    'MsgBox DocWord.tables.Count
+    If DocWord.InlineShapes.Count >= 1 Then
+        MsgBox "Este documento tem " & DocWord.InlineShapes.Count _
+         & " InlineShapes"
+         
+        For contador = 1 To DocWord.InlineShapes.Count
+        ' Se tiver gráfico, entao copia
+            If DocWord.InlineShapes(contador).HasChart = True Then
+            
+                Set testeGrafico = DocWord.InlineShapes(contador).Chart
+                'numero_shape = numero_shape + 1
+                Set WS = ActiveWorkbook
+                
+                Dim nome_planilha
+                
+                Dim quantidade_series
+                
+                numero_planilha = numero_planilha + 1
+                
+                nome_planilha = "Grafico " & numero_planilha
+                
+                WS.Sheets.Add(after:=ActiveSheet).Name = _
+                nome_planilha
+
+                
+                
+                'testeGrafico.ChartData.Activate
+                testeGrafico.ChartData.BreakLink
+                'testeGrafico.ChartData (IsLinked = False)
+                
+                
+                'MsgBox "A variavel é do tipo " & VarType(testeGrafico)
+                
+        
+                
+                'MsgBox nome_planilha & " " & TypeName(testeGrafico)
+                ' MsgBox testeGrafico.ChartTitle.Text
+                'Call Dados_graficos
+                WS.Worksheets(nome_planilha).Range("A1").Value = _
+                testeGrafico.ChartTitle.Text
+                
+                'WS.Sheets.Range("A5:A15").Value = ActiveChart.SeriesCollection(1).Values
+               
+               'cht.Deactivate
+                
+                'testeGrafico.Chart.Copy Destination:=WS.Worksheets(nome_planilha)
+                'ActiveChart.Copy
+                
+                'WS.Worksheets(nome_planilha).Paste
+                'for iSeriesColection = 1 To
+                
+                
+                ' WS.Worksheets(nome_planilha).Paste
+               ' WS.Worksheets(nome_planilha).Range("A1").Value = "AAA"
+                'Set cht =
+                'cht = WS.Worksheets(nome_planilha). _
+                'Shapes(1).Chart
+                'WS.ActiveSheet.Shapes.Paste
+                WordApp.CutCopyMode = True
+                testeGrafico.Copy
+                'cht.Paste
+                
+                
+                
+                
+                WS.Worksheets(nome_planilha).Shapes.AddChart2
+                WS.Worksheets(nome_planilha).Shapes(1).Chart.Paste
+                'WS.Worksheets(nome_planilha).Shapes(1).Paste xlPasteValues
+                'WS.Worksheets(nome_planilha).Shapes(1).Paste xlFormats
+                WS.Worksheets(nome_planilha).Shapes(1).Chart.ChartType = _
+                testeGrafico.ChartType
+                WS.Worksheets(nome_planilha).Shapes(1).Chart.ChartTitle = _
+                testeGrafico.ChartTitle
+                WS.Worksheets(nome_planilha).Shapes(1).Chart.ChartArea = _
+                testeGrafico.ChartArea
+                WS.Worksheets(nome_planilha).Shapes(1).Chart.Legend = _
+                testeGrafico.Legend
+                
+                WordApp.CutCopyMode = False
+                WS.Worksheets(nome_planilha).Shapes(1).Chart.ChartTitle = testeGrafico.ChartTitle.Text
+                'WS
+                'WS.Worksheets(nome_planilha).Shapes(1).Chart.xlPasteFormats
+                
+                quant_shapes = Worksheets(nome_planilha).Shapes.Count
+                'MsgBox "Quantidade de shapes " & quant_shapes
+                'MsgBox "Quantidade de Series " & testeGrafico.FullSeriesCollection.Count
+                For quantidade_series = 1 To testeGrafico.FullSeriesCollection.Count
+                    If quantidade_series > 1 And ActiveSheet.Shapes(1).Chart.SeriesCollection.Count < testeGrafico.FullSeriesCollection.Count Then
+                    ' Cria uma serie
+                        ActiveSheet.Shapes(1).Chart.SeriesCollection.Add _
+                        Source:=WS.Worksheets(nome_planilha). _
+                        Range("D4")
+                    End If
+                    
+                    ' Ajusta os valores dentro do gráfico
+                    ActiveSheet.Shapes(1).Chart.SeriesCollection(quantidade_series).Values = _
+                    testeGrafico.SeriesCollection(quantidade_series).Values
+                    ' Copia o nome da série
+                    ActiveSheet.Shapes(1).Chart.SeriesCollection(quantidade_series).Name = _
+                    testeGrafico.SeriesCollection(quantidade_series).Name
+                    ' Copia o formato da série
+                    testeGrafico.SeriesCollection(quantidade_series).Copy
+                    ActiveSheet.Shapes(1).Chart.SeriesCollection(quantidade_series).Paste xlFormats
+'                    ActiveSheet.Shapes(1).Chart.SeriesCollection(quantidade_series).Values = _
+'                    testeGrafico.SeriesCollection(quantidade_series).Values
+                    'MsgBox quantidade_series
+                    'MsgBox quantidade_series
+                Next quantidade_series
+                
+                'WS.Worksheets(nome_planilha). _
+                'Shapes(1).Chart = cht
+                'WS.Worksheets(nome_planilha).Shapes(1).Chart.Deactive
+                testeGrafico.ChartArea.Copy
+                'WS.Worksheets(nome_planilha).Shapes(1).Chart.Paste xlFormats
+                'WS.Worksheets(nome_planilha).Shapes(1).Chart.SeriesNames.Values = testeGrafico.SeriesNames.Values
+            End If
+            
+            'Set cht = Nothing
+            
+            Set testeGrafico = Nothing
+        Next contador
+    End If
+    'On Error Resume Next
+    WordApp.Documents.Close _
+    SaveChanges:=wdDoNotSaveChanges, _
+     OriginalFormat:=wdPromptUser
+errorHandler:
+    If Err = 4198 Then MsgBox "Document was not closed"
+    
+    WordApp.Quit
+    On Error Resume Next
+    
+    
+    
+    
+    'DocWord.Activate
+    
+    'DocWord.Charts
+    
+    
+End Sub
+Sub n_shapes()
+    MsgBox ActiveChart.
+'    ActiveSheet.Shapes.AddChart2
+'    ActiveSheet.Shapes(2).Chart.ChartTitle.Paste xlPasteValues
+End Sub
